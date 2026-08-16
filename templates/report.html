@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Analytics Report — @aroaxinping</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0f0f0f;
+            color: #e0e0e0;
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #e85d04;
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+        .subtitle {
+            color: #888;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+        }
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .card {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 1.2rem;
+        }
+        .card .label {
+            color: #888;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .card .value {
+            color: #e85d04;
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-top: 0.3rem;
+        }
+        .card .detail {
+            color: #666;
+            font-size: 0.75rem;
+            margin-top: 0.2rem;
+        }
+        h2 {
+            color: #e85d04;
+            font-size: 1.2rem;
+            margin: 2rem 0 1rem;
+            border-bottom: 1px solid #2a2a2a;
+            padding-bottom: 0.5rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2rem;
+        }
+        th {
+            background: #1a1a1a;
+            color: #e85d04;
+            text-align: left;
+            padding: 0.7rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        td {
+            padding: 0.7rem;
+            border-bottom: 1px solid #1a1a1a;
+            font-size: 0.85rem;
+        }
+        tr:hover { background: #151515; }
+        .platform-tiktok { color: #69c9d0; }
+        .platform-instagram { color: #e1306c; }
+        .anomaly-tag {
+            background: #e85d04;
+            color: #0f0f0f;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+        .empty-state {
+            color: #555;
+            font-style: italic;
+            padding: 1rem 0;
+        }
+        footer {
+            margin-top: 3rem;
+            padding-top: 1rem;
+            border-top: 1px solid #1a1a1a;
+            color: #444;
+            font-size: 0.7rem;
+        }
+    </style>
+</head>
+<body>
+    <h1>Social Analytics Report</h1>
+    <p class="subtitle">@aroaxinping — {{ report_date }}</p>
+
+    <div class="cards">
+        <div class="card">
+            <div class="label">Posts Totales</div>
+            <div class="value">{{ metrics.total_posts }}</div>
+        </div>
+        <div class="card">
+            <div class="label">Visualizaciones Totales</div>
+            <div class="value">{{ "{:,.0f}".format(metrics.total_views) }}</div>
+        </div>
+        <div class="card">
+            <div class="label">Engagement Medio</div>
+            <div class="value">{{ "%.2f"|format(metrics.avg_engagement_rate) }}%</div>
+        </div>
+        <div class="card">
+            <div class="label">Viral Rate</div>
+            <div class="value">{{ "%.2f"|format(metrics.viral_rate) }}%</div>
+            <div class="detail">posts con views > 3 std</div>
+        </div>
+        <div class="card">
+            <div class="label">Mejor Plataforma</div>
+            <div class="value">{{ metrics.best_platform }}</div>
+            <div class="detail">por engagement medio</div>
+        </div>
+    </div>
+
+    {% if metrics.platform_comparison %}
+    <h2>Comparacion por Plataforma</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Plataforma</th>
+                <th>Posts</th>
+                <th>Views Medio</th>
+                <th>Engagement Medio</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in metrics.platform_comparison %}
+            <tr>
+                <td class="platform-{{ row.platform | lower }}">{{ row.platform }}</td>
+                <td>{{ row.posts }}</td>
+                <td>{{ "{:,.0f}".format(row.avg_views) }}</td>
+                <td>{{ "%.2f"|format(row.avg_engagement) }}%</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+
+    <h2>Top {{ top_posts | length }} Posts</h2>
+    {% if top_posts %}
+    <table>
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Plataforma</th>
+                <th>Descripcion</th>
+                <th>Views</th>
+                <th>Engagement</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for post in top_posts %}
+            <tr>
+                <td>{{ post.date }}</td>
+                <td class="platform-{{ post.platform | lower }}">{{ post.platform }}</td>
+                <td>{{ post.description[:60] }}{% if post.description | length > 60 %}...{% endif %}</td>
+                <td>{{ "{:,.0f}".format(post.views) }}</td>
+                <td>{{ "%.2f"|format(post.engagement_rate) }}%</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="empty-state">Sin datos de posts.</p>
+    {% endif %}
+
+    <h2>Anomalias Detectadas</h2>
+    {% if anomalies %}
+    <table>
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Plataforma</th>
+                <th>Descripcion</th>
+                <th>Views</th>
+                <th>Tag</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for post in anomalies %}
+            <tr>
+                <td>{{ post.date }}</td>
+                <td class="platform-{{ post.platform | lower }}">{{ post.platform }}</td>
+                <td>{{ post.description[:60] }}{% if post.description | length > 60 %}...{% endif %}</td>
+                <td>{{ "{:,.0f}".format(post.views) }}</td>
+                <td><span class="anomaly-tag">VIRAL</span></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="empty-state">Sin anomalias detectadas en este periodo.</p>
+    {% endif %}
+
+    <footer>
+        Generado por etl-social-pipeline — Prefect ETL — {{ report_date }}
+    </footer>
+</body>
+</html>
